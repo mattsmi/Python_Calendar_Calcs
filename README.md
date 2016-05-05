@@ -18,4 +18,5 @@ The Chronological Julian Day Number is a whole number representing a day.
 
 * `DoW` : expects a CJDN and the calendar to use. It returns the day of the week for the given CJDN on the requested calendar. If the calendar is not supplied, the function defaults to calculating the day of the week on the Gregorian calendar. As elsewhere, 1 = the Julian calendar, 2 = the Revised Julian \(Milanković\) calendar, and 3 = the Gregorian calendar. The day of the week is returned as an ISO 8601 integer, where Monday = 1 and Sunday = 7.
 
-This Python script imports `datetime` and two functions \(`floor` and `fmod`\) from the `math` package.
+This Python script imports `datetime` and two functions \(`floor` and `fmod`\) from the `math` package. The script is written in Python 3 \(minimum version 0x030000F0\). As most of it consists of mathematical calculations, I do not envisage any issues using the functions in an earlier version of Python.
+
