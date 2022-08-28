@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 '''
 Created on 27/01/2013
+Updated 28/08/2022 with simpler Day of Week calculation,
+   thanks to beardley52.
+   Also, updated to check for minimum dates for each calendar
 
 @author: matta
 
@@ -12,6 +15,15 @@ Contains functions for finding the date of Easter according to the
 import datetime
 from math import floor
 from math import fmod
+
+# Constants
+# Although the Julian calendar was introducd in 45 BC, its leap years
+#    were not followed correctly until at last AD 6. Other politcally
+#    based modifications happened locally, so that early dates
+#    cannot always be assumed to be correct.
+MINIMUM_YEAR_GREGORIAN = 1582   # year defined and instituted
+MINIMUM_YEAR_MILANKOVIC = 1923  # year defined and instituted
+MINIMUM_YEAR_JULIAN = 325   # Constantine proclaims date of Easter
 
 def pGregorianToCJDN(sYear, sMonth, sDay):
     ''' Converts a Gregorian date passed in a three strings (year, month, day) to a
@@ -26,6 +38,11 @@ def pGregorianToCJDN(sYear, sMonth, sDay):
     iMonth = int(sMonth)
     iDay = int(sDay)
 
+    # check date is above minimum for the calendar
+    if iYear < MINIMUM_YEAR_GREGORIAN:
+        return False
+
+    # calculation
     iC0 = floor((iMonth - 3) / 12)
     iX4 = iYear + iC0
     iX3 = floor(iX4 / 100)
@@ -81,6 +98,10 @@ def pMilankovicToCJDN(sYear, sMonth, sDay):
     iYear = int(sYear)
     iMonth = int(sMonth)
     iDay = int(sDay)
+
+    # check date is above minimum for the calendar
+    if iYear < MINIMUM_YEAR_MILANKOVIC:
+        return False
 
     iC0 = floor((iMonth - 3) / 12)
     iX4 = iYear + iC0
@@ -138,6 +159,10 @@ def pJulianToCJDN(sYear, sMonth, sDay):
     iMonth = int(sMonth)
     iDay = int(sDay)
 
+    # check date is above minimum for the calendar
+    if iYear < MINIMUM_YEAR_JULIAN:
+        return False
+
     iJ0 = 1721117
     iC0 = floor((iMonth - 3) / 12)
     iJ1 = floor(((iC0 + iYear) * 1461) / 4)
@@ -178,47 +203,23 @@ def pCJDNToJulian(iCJDN, bDoYear=False, bDoMonth=False, bDoDay=False):
     sISO8601Date = ('0000' + str(iYear))[-4:] + '-' + ('00' + str(iMonth))[-2:] + '-' + ('00' + str(iDay))[-2:]
     return sISO8601Date
 
-def DoW(iCJDN, iEDM=3):
+def DoW(iCJDN, iEDM=None):
     ''' Calculates the day of the week for a given date, for a given calendar.
+        The iEDM is no longer required (post updated code 2022-08-28), however
+        the parameter remains to ensure backwards compatibility with code 
+        that uses the earlier version.
         iEDM = 1 for Julian; 2 for Revised Julian, and 3 for Gregorian calendar.
     '''
+    # Constant defining the days in a week for each of the Gregorian, 
+    #   Revised Julian, and Julian calendars.
+    DAYS_IN_WEEK = 7
 
     #Basic check of parameters
     if not isinstance(iCJDN, int):
         return False
-    if not isinstance(iEDM, int):
-        return False
-    if (iEDM < 1) or (iEDM > 3):
-        return False
 
-    #Find the component parts of the date
-    if iEDM == 1:
-        iYear = pCJDNToJulian(iCJDN, True)
-        iMonth = pCJDNToJulian(iCJDN, False, True)
-        iDay = pCJDNToJulian(iCJDN, False, False, True)
-    elif iEDM == 2:
-        iYear = pCJDNToMilankovic(iCJDN, True)
-        iMonth = pCJDNToMilankovic(iCJDN, False, True)
-        iDay = pCJDNToMilankovic(iCJDN, False, False, True)
-    else:
-        #Gregorian is the default
-        iYear = pCJDNToGregorian(iCJDN, True)
-        iMonth = pCJDNToGregorian(iCJDN, False, True)
-        iDay = pCJDNToGregorian(iCJDN, False, False, True)
-
-    #Basic parts of calculation
-    iA = floor((14 - iMonth) / 12)
-    iY = iYear - iA
-    iM = (iMonth + (12 * iA) - 2)
-
-    #Per calendar calculations.
-    #NB The Revised Julian calendar is the same as the Gregorian until AD 2800.
-    if iEDM == 1:
-        iD = int(fmod((5 + iDay + iY + floor(iY / 4) + floor((31 * iM) / 12)), 7))
-    if (iEDM == 2) and (iYear < 2800):
-        iD = int(fmod((((iDay + iY + floor(iY / 4)) - floor(iY / 100)) + floor((iY + 300) / 900) + floor((iY + 700) / 900) + floor((31 * iM) / 12)), 7))
-    if (iEDM == 3) or ((iEDM == 2) and (iYear >= 2800)):
-        iD = int(fmod((((iDay + iY + floor(iY / 4)) - floor(iY / 100)) + floor(iY / 400) + floor((31 * iM) / 12)), 7))
+    #Basic calculation
+    iD = (iCJDN + 1) % DAYS_IN_WEEK
 
     #adjust day of week to correct ISO 8601 representation.
     #   Monday = 1; Sunday = 7
